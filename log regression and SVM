@@ -1,0 +1,58 @@
+import pandas as pd
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+import matplotlib.pyplot as plt
+from sklearn.svm import SVC
+
+# Логистическая регрессия
+csv_file = 'adult.csv'
+data = pd.read_csv(csv_file)
+data = data.loc[data['workclass'] != '?']
+data = data.loc[data['occupation'] != '?']
+data = data.loc[data['native-country'] != '?']
+
+# Построение графика
+grouped = data.groupby('education')
+for name, group in grouped:
+    plt.bar(name, group['education'].count())
+plt.xlabel('Education')
+plt.ylabel('Count')
+plt.title('Distribution by education')
+plt.show()
+
+selectedColumns = data[['age', 'education', 'relationship', 'gender', 'hours-per-week', 'income']]
+x = pd.get_dummies(selectedColumns, columns=['education', 'relationship', 'gender'], dtype=int)
+
+del x['income']
+le = LabelEncoder()
+le.fit(data['income'])
+y = pd.Series(data=le.transform(data['income']))
+
+model = make_pipeline(
+    StandardScaler(),
+    LogisticRegression(max_iter=1000)
+    )
+
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
+
+model.fit(x_train, y_train)
+predictions = model.predict(x_test)
+model.predict(x_test)
+
+train_score_lr = model.score(x_train, y_train)
+test_score_lr = model.score(x_test, y_test)
+print(f"score_train для логистической регрессии: {train_score_lr} ")
+print(f"score_test для логистической регрессии: {test_score_lr} ")
+
+# Метод опорных векторов
+clf = make_pipeline(StandardScaler(), SVC())
+clf.fit(x_train, y_train)
+
+train_score_svm = clf.score(x_train, y_train)
+test_score_svm = clf.score(x_test, y_test)
+
+print(f"score_train для SVM: {train_score_svm} ")
+print(f"score_test для SVM: {test_score_svm} ")
